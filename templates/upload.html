@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Upload Excel</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <h2>Upload Excel File</h2>
+    <form method="POST" enctype="multipart/form-data">
+      <input type="file" name="file" accept=".xlsx, .xls" required><br><br>
+      <button type="submit">Upload</button>
+    </form>
+    <br>
+    <a href="/dashboard">View Dashboard</a> | <a href="/logout">Logout</a>
+  </div>
+</body>
+</html>

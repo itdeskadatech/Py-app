@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Agent Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    #searchBar {
+      margin: 20px 0;
+      padding: 8px;
+      width: 300px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Agent Dashboard</h1>
+
+  <input type="text" id="searchBar" placeholder="Search by name or university..." />
+  <button onclick="toggleOrientation()">Toggle Chart Orientation</button>
+  <button onclick="downloadChart()">Download Chart</button>
+
+  <canvas id="incentiveChart" width="1000" height="500"></canvas>
+
+  <br/>
+  {% if session.admin %}
+    <a href="{{ url_for('upload') }}">Upload New File</a> |
+    <a href="{{ url_for('logout') }}">Logout</a>
+  {% else %}
+    <a href="{{ url_for('login') }}">Admin Login</a>
+  {% endif %}
+
+  <script>
+    let originalData = [];
+    let chart;
+    let isHorizontal = true;
+
+    function renderChart(filteredData) {
+      const names = filteredData.map(item => `${item["First Name"]} (${item["University Name"]})`);
+      const incentives = filteredData.map(item => item["Incentive Amount"]);
+      const backgroundColors = filteredData.map(() => `hsl(${Math.floor(Math.random()*360)}, 70%, 60%)`);
+
+      const config = {
+        type: 'bar',
+        data: {
+          labels: names,
+          datasets: [{
+            label: 'Incentive Amount',
+            data: incentives,
+            backgroundColor: backgroundColors,
+            borderColor: backgroundColors,
+            borderWidth: 1
+          }]
+        },
+        options: {
+          indexAxis: isHorizontal ? 'y' : 'x',
+          responsive: true,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: context => `₹${context.parsed[isHorizontal ? 'x' : 'y']}`
+              }
+            }
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              title: { display: true, text: 'Incentive Amount (₹)' }
+            },
+            y: {
+              title: { display: true, text: 'Agents' }
+            }
+          }
+        }
+      };
+
+      if (chart) chart.destroy();
+      chart = new Chart(document.getElementById('incentiveChart'), config);
+    }
+
+    function toggleOrientation() {
+      isHorizontal = !isHorizontal;
+      renderChart(originalData);
+    }
+
+    function downloadChart() {
+      const a = document.createElement('a');
+      a.href = chart.toBase64Image();
+      a.download = 'incentive_chart.png';
+      a.click();
+    }
+
+    document.getElementById('searchBar').addEventListener('input', function () {
+      const keyword = this.value.toLowerCase();
+      const filtered = originalData.filter(item =>
+        item["First Name"].toLowerCase().includes(keyword) ||
+        item["University Name"].toLowerCase().includes(keyword)
+      );
+      renderChart(filtered);
+    });
+
+    fetch('/data')
+      .then(res => res.json())
+      .then(data => {
+        data.sort((a, b) => b["Incentive Amount"] - a["Incentive Amount"]);
+        originalData = data;
+        renderChart(originalData);
+      });
+  </script>
+</body>
+</html>
